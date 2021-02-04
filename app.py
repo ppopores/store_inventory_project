@@ -148,10 +148,6 @@ def backup_db():
     time.sleep(3)
     clear()
 
-def quit_app():
-    """Quit application."""
-    sys.exit("Peace out!")
-
 menu = OrderedDict([
     ("v", display_id),
     ("a", add_new_products),
