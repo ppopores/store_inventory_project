@@ -28,20 +28,27 @@ def initial_fill():
         inv_reader = csv.DictReader(csvfile, delimiter=",")
         rows = list(inv_reader)
         for item in rows:
+            item["product_quantity"] = int(item["product_quantity"])
+            item["product_price"] = round(float((item["product_price"].strip("$")))*100)
+            item["date_updated"] = datetime.datetime.strptime(item["date_updated"], "%m/%d/%Y")
             try:
                 Product.create(product_name=item["product_name"],
                     product_quantity=item["product_quantity"],
-                    product_price=round(float(item["product_price"].strip("$"))*100),
-                    date_updated=datetime.datetime.strptime(item["date_updated"], "%m/%d/%Y"))
+                    product_price=item["product_price"],
+                    date_updated=item["date_updated"])
 
             except IntegrityError:
 
                 product_record = Product.get(product_name = item["product_name"])
-                product_record.product_name = item["product_name"]
-                product_record.product_quantity = item["product_quantity"]
-                product_record.product_price = round(float(item["product_price"].strip("$"))*100)
-                product_record.date_updated = datetime.datetime.strptime(item["date_updated"], "%m/%d/%Y")
-                product_record.save()
+
+                if product_record.date_updated <= item["date_updated"]:
+                    product_record.product_name = item["product_name"]
+                    product_record.product_quantity = item["product_quantity"]
+                    product_record.product_price = item["product_price"]
+                    product_record.date_updated = item["date_updated"]
+                    product_record.save()
+                else:
+                    pass
 
 def add_new_products():
     """Add a new item to the database."""
@@ -50,6 +57,7 @@ def add_new_products():
             new_pn = input("What is the name of the product that you would like to add?     ")
             new_pq = int(input("How many units are you adding?         "))
             new_uc = round(float(input("What is the unit cost? $"))*100)
+
         except ValueError:
             print("Hmmmm, something's not right, let's try that again!")
             continue
@@ -57,7 +65,8 @@ def add_new_products():
             adding_product = Product.create(
                 product_name=new_pn,
                 product_quantity=new_pq,
-                product_price=new_uc)
+                product_price=new_uc,
+                date_updated=datetime.datetime.now())
             print(f"\n{new_pn.title()} successfully added to the inventory!\n")
             time.sleep(2)
             clear()
@@ -68,6 +77,8 @@ def add_new_products():
                 product_record = Product.get(product_name = new_pn)
                 product_record.product_quantity = new_pq
                 product_record.product_price = new_uc
+                #if date updated is less than date now change date
+                product_record.date_updated = datetime.datetime.now()
                 product_record.save()
                 print(f"\n{new_pn.title()} saved successfully!\n")
                 time.sleep(2)
@@ -147,6 +158,7 @@ def backup_db():
     print("All backed up as of {}.".format(datetime.datetime.now().strftime("%H%MPST on %A, %b %d, %Y")) + "\n")
     time.sleep(3)
     clear()
+
 
 menu = OrderedDict([
     ("v", display_id),
